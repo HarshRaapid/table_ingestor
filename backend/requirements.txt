@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+PyYAML
+pandas
+SQLAlchemy
+psycopg2-binary
+python-multipart
+openpyxl
+xlrd
