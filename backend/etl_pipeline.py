@@ -10,6 +10,7 @@ from sqlalchemy import create_engine, MetaData, Table, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from fastapi.middleware.cors import CORSMiddleware
 
 # Load config
 def load_config(path="config.yaml") -> dict:
@@ -23,6 +24,14 @@ uploads: Dict[str, str] = {}      # file_id -> filepath
 mappings: Dict[str, dict] = {}     # mapping_id -> MappingRequest dict
 
 app = FastAPI(title="Excel-to-Postgres ETL Service")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # your Next.js origin
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Pydantic models
 class CreateTableRequest(BaseModel):

@@ -1,0 +1,9 @@
+@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom scrollbar, fonts, etc. */
+body {
+  @apply bg-gray-50 text-gray-800;
+}
