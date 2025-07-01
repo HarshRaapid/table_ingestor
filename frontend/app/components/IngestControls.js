@@ -1,12 +1,18 @@
 import { useState } from 'react'
 import axios from 'axios'
+import { toast } from 'react-toastify'
 
-export default function IngestControls({ fileId, mappingId, server, database, table }) {
-  const [mode, setMode]     = useState('append')
-  const [status, setStatus] = useState(null)
+export default function IngestControls({
+  fileId,
+  mappingId,
+  server,
+  database,
+  table,
+  onReset
+}) {
+  const [mode, setMode] = useState('append')
 
   async function runIngest() {
-    setStatus('running')
     try {
       const res = await axios.post('http://localhost:8000/api/ingest', {
         file_id: fileId,
@@ -16,9 +22,10 @@ export default function IngestControls({ fileId, mappingId, server, database, ta
         table_name: table,
         mode,
       })
-      setStatus(`✅ ${res.data.rows} rows ingested (${mode})`)
+      toast.success(`✅ ${res.data.rows} rows ingested (${mode})`)
+      onReset()
     } catch (e) {
-      setStatus(`❌ ${e.response?.data?.detail || e.message}`)
+      toast.error(`❌ ${e.response?.data?.detail || e.message}`)
     }
   }
 
@@ -42,7 +49,6 @@ export default function IngestControls({ fileId, mappingId, server, database, ta
       >
         Start Ingest
       </button>
-      {status && <p className="mt-2 font-mono">{status}</p>}
     </div>
   )
 }

@@ -1,34 +1,42 @@
-// app/page.jsx
 'use client'
 
 import { useState } from 'react'
-import ServerSelector    from './components/ServerSelector'
-import DatabaseSelector  from './components/DatabaseSelector'
-import TableSelector     from './components/TableSelector'
-import NewTableModal     from './components/NewTableModal'
-import FileUpload        from './components/FileUpload'
-import ColumnMapper      from './components/ColumnMapper'
-import IngestControls    from './components/IngestControls'
+import ServerSelector   from './components/ServerSelector'
+import DatabaseSelector from './components/DatabaseSelector'
+import TableSelector    from './components/TableSelector'
+import NewTableModal    from './components/NewTableModal'
+import FileUpload       from './components/FileUpload'
+import ColumnMapper     from './components/ColumnMapper'
+import IngestControls   from './components/IngestControls'
 
 export default function Home() {
-  const [server, setServer]       = useState('')
-  const [database, setDatabase]   = useState('')
-  const [table, setTable]         = useState('')
-  const [fileId, setFileId]       = useState(null)
-  const [mappingId, setMappingId] = useState(null)
+  const [server, setServer]         = useState('')
+  const [database, setDatabase]     = useState('')
+  const [table, setTable]           = useState('')
+  const [fileId, setFileId]         = useState(null)
+  const [mappingId, setMappingId]   = useState(null)
   const [showNewTable, setShowNewTable] = useState(false)
+  const [tableRefresh, setTableRefresh] = useState(0)
+
+  const refreshTables = () => setTableRefresh(n => n + 1)
+
+  const resetIngest = () => {
+    setFileId(null)
+    setMappingId(null)
+  }
 
   return (
     <div className="space-y-6">
       {/* Steps 1–3 */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <ServerSelector   value={server}   onChange={setServer} />
-        <DatabaseSelector server={server}  value={database} onChange={setDatabase} />
+        <ServerSelector value={server} onChange={setServer} />
+        <DatabaseSelector server={server} value={database} onChange={setDatabase} />
         <TableSelector
           server={server}
           database={database}
           value={table}
           onChange={v => v === '__NEW__' ? setShowNewTable(true) : setTable(v)}
+          refresh={tableRefresh}
         />
       </div>
 
@@ -36,8 +44,12 @@ export default function Home() {
         open={showNewTable}
         server={server}
         database={database}
-        onCreate={newTab => { setTable(newTab); setShowNewTable(false) }}
+        onCreate={newTab => {
+          setTable(newTab)
+          setShowNewTable(false)
+        }}
         onClose={() => setShowNewTable(false)}
+        onTableCreated={refreshTables}
       />
 
       {/* Step 4 */}
@@ -69,6 +81,7 @@ export default function Home() {
           server={server}
           database={database}
           table={table}
+          onReset={resetIngest}
         />
       )}
     </div>

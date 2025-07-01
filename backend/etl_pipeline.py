@@ -3,7 +3,7 @@ import uuid
 import shutil
 import yaml
 import pandas as pd
-from fastapi import FastAPI, UploadFile, File, Body, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException
 from pydantic import BaseModel
 from typing import List, Dict
 from sqlalchemy import create_engine, MetaData, Table, text
@@ -21,7 +21,7 @@ config = load_config()
 
 # In-memory stores
 uploads: Dict[str, str] = {}      # file_id -> filepath
-mappings: Dict[str, dict] = {}     # mapping_id -> MappingRequest dict
+mappings: Dict[str, dict] = {}    # mapping_id -> MappingRequest dict
 
 app = FastAPI(title="Excel-to-Postgres ETL Service")
 
@@ -69,7 +69,7 @@ def make_engine(server_name: str, database: str = None) -> Engine:
     port = srv.get("port", 5432)
     db_part = f"/{database}" if database else ""
     uri = f"postgresql+psycopg2://{user}:{pwd}@{host}:{port}{db_part}"
-    return create_engine(uri , isolation_level="AUTOCOMMIT")
+    return create_engine(uri, isolation_level="AUTOCOMMIT")
 
 # 1. List servers
 @app.get("/api/servers", response_model=List[str])
@@ -82,7 +82,9 @@ def list_databases(server_name: str):
     engine = make_engine(server_name)
     try:
         with engine.connect() as conn:
-            result = conn.execute(text("SELECT datname FROM pg_database WHERE datistemplate = false;"))
+            result = conn.execute(text(
+                "SELECT datname FROM pg_database WHERE datistemplate = false;"
+            ))
             return [row[0] for row in result]
     except SQLAlchemyError as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -134,9 +136,6 @@ def list_table_columns(server_name: str, database_name: str, table_name: str):
 # 6. Upload file
 @app.post("/api/files/upload")
 async def upload_file(
-    # server_name: str = Body(...),
-    # database_name: str = Body(...),
-    # table_name: str = Body(...),
     file: UploadFile = File(...)
 ):
     file_id = uuid.uuid4().hex
@@ -197,9 +196,10 @@ def ingest_data(req: IngestRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-    # Apply mapping
+    # Apply mapping: only keep mapped source columns, then rename to target names
     mapping = mappings[mapping_id]["mapping"]
-    df = df.rename(columns=mapping)
+    src_cols = [col for col in mapping.keys() if col in df.columns]
+    df = df[src_cols].rename(columns={col: mapping[col] for col in src_cols})
 
     # Write to DB
     engine = make_engine(req.server_name, req.database_name)
@@ -213,7 +213,6 @@ def ingest_data(req: IngestRequest):
         elif mode == "append":
             df.to_sql(table, con=engine, if_exists="append", index=False, method="multi")
         elif mode == "upsert":
-            # Reflect table
             metadata = MetaData(bind=engine)
             tbl = Table(table, metadata, autoload_with=engine)
             with engine.begin() as conn:

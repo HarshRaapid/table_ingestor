@@ -5,7 +5,14 @@ import { Dialog, Transition } from '@headlessui/react'
 import { PlusCircleIcon }     from '@heroicons/react/24/outline'
 import axios                   from 'axios'
 
-export default function NewTableModal({ open, onClose, server, database, onCreate }) {
+export default function NewTableModal({
+  open,
+  onClose,
+  server,
+  database,
+  onCreate,
+  onTableCreated
+}) {
   const [tableName, setTableName] = useState('')
   const [cols, setCols]           = useState([{ name: '', type: 'VARCHAR(100)' }])
 
@@ -18,16 +25,13 @@ export default function NewTableModal({ open, onClose, server, database, onCreat
       `http://localhost:8000/api/servers/${server}/databases/${database}/tables`,
       body
     )
-    onCreate(tableName)
+    onTableCreated()         // trigger parent to re-fetch table list
+    onCreate(tableName)      // close modal & set selected table
   }
 
   return (
     <Transition show={open} as={Fragment}>
-      <Dialog
-        as="div"
-        className="fixed inset-0 z-50 overflow-y-auto"
-        onClose={onClose}
-      >
+      <Dialog as="div" className="fixed inset-0 z-50 overflow-y-auto" onClose={onClose}>
         <div className="relative min-h-screen px-4 text-center">
           {/* Backdrop */}
           <Transition.Child
@@ -39,21 +43,15 @@ export default function NewTableModal({ open, onClose, server, database, onCreat
             leaveFrom="opacity-100"
             leaveTo="opacity-0"
           >
-            <div
-              className="fixed inset-0 bg-black bg-opacity-30"
-              aria-hidden="true"
-            />
+            <div className="fixed inset-0 bg-black bg-opacity-30" aria-hidden="true" />
           </Transition.Child>
 
-          {/* Centering trick */}
-          <span
-            className="inline-block h-screen align-middle"
-            aria-hidden="true"
-          >
+          {/* Center trick */}
+          <span className="inline-block h-screen align-middle" aria-hidden="true">
             &#8203;
           </span>
 
-          {/* Modal panel: now positioned so it paints after the backdrop */}
+          {/* Modal panel */}
           <Transition.Child
             as={Fragment}
             enter="ease-out duration-300"
@@ -65,10 +63,7 @@ export default function NewTableModal({ open, onClose, server, database, onCreat
           >
             <div className="relative inline-block w-full max-w-lg p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-lg">
               
-              <Dialog.Title
-                as="h3"
-                className="text-lg font-medium leading-6 text-gray-900"
-              >
+              <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900">
                 Create New Table
               </Dialog.Title>
 
