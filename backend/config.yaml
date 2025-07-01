@@ -1,0 +1,6 @@
+servers:
+  - name: baka
+    host: localhost
+    port: 5432
+    user: postgres
+    password: KratosFaye31
